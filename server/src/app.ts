@@ -89,7 +89,7 @@ export function createApp(store: Store) {
     const auth = req.headers.authorization;
     if (auth?.startsWith('Bearer ')) {
       try {
-        const payload = jwt.verify(auth.slice(7), config.jwtSecret) as { sub: number };
+        const payload = jwt.verify(auth.slice(7), config.jwtSecret) as jwt.JwtPayload;
         const user = await store.findUserById(Number(payload.sub));
         if (user) req.user = user;
       } catch {

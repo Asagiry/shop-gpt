@@ -24,13 +24,23 @@ function createMemoryStore(): Store {
     getProduct: vi.fn(async (id: number) => products.find((product) => product.id === id) ?? null),
     findUserByEmailOrUsername: vi.fn(async () => null),
     findUserById: vi.fn(async () => null),
-    createUser: vi.fn(async (input) => ({ id: 9, email: input.email, username: input.username, role: 'customer', name: input.name })),
+    createUser: vi.fn(async (input) => ({ id: 9, email: input.email, username: input.username, role: 'customer' as const, name: input.name })),
     verifyPassword: vi.fn(async () => true),
     createPasswordToken: vi.fn(async () => 'reset-token'),
     resetPassword: vi.fn(async () => true),
     createOrder: vi.fn(async (input) => {
       products[0].stock -= input.items[0].quantity;
-      const order = { id: 11, status: 'New', totalCents: 6400, ...input };
+      const order = {
+        id: 11,
+        userId: input.userId,
+        customerName: input.customerName,
+        address: input.address,
+        phone: input.phone,
+        paymentMethod: input.paymentMethod,
+        items: input.items,
+        status: 'New' as const,
+        totalCents: 6400
+      };
       orders.push(order);
       return order;
     }),
@@ -38,7 +48,7 @@ function createMemoryStore(): Store {
     listOrders: vi.fn(async () => orders),
     updateOrderStatus: vi.fn(async (_id, status) => ({ ...orders[0], status })),
     createProduct: vi.fn(async (input) => ({ id: 2, ...input })),
-    updateProduct: vi.fn(async (id, input) => ({ id, ...products[0], ...input })),
+    updateProduct: vi.fn(async (id, input) => ({ ...products[0], ...input, id })),
     deleteProduct: vi.fn(async () => undefined),
     logEvent: vi.fn(async () => undefined)
   };

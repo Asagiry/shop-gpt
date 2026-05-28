@@ -19,9 +19,6 @@ set +a
 SSH_USER="${SSH_USER:-base-ubuntu}"
 SSH_TARGET="${SSH_USER}@${SSH_IP}"
 
-ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$SSH_TARGET" "mkdir -p '$REMOTE_DIR'"
-scp -i "$KEY_FILE" -o StrictHostKeyChecking=no "$ENV_FILE" "$SSH_TARGET:$REMOTE_DIR/.env"
-
 ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$SSH_TARGET" "REMOTE_DIR='$REMOTE_DIR' REPO_URL='$REPO_URL' bash -s" <<'REMOTE'
 set -euo pipefail
 
@@ -29,7 +26,12 @@ if [[ ! -d "$REMOTE_DIR/.git" ]]; then
   rm -rf "$REMOTE_DIR"
   git clone "$REPO_URL" "$REMOTE_DIR"
 fi
+REMOTE
 
+scp -i "$KEY_FILE" -o StrictHostKeyChecking=no "$ENV_FILE" "$SSH_TARGET:$REMOTE_DIR/.env"
+
+ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$SSH_TARGET" "REMOTE_DIR='$REMOTE_DIR' REPO_URL='$REPO_URL' bash -s" <<'REMOTE'
+set -euo pipefail
 cd "$REMOTE_DIR"
 git fetch origin main
 git reset --hard origin/main
