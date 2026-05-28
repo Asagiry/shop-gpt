@@ -45,7 +45,7 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
     }
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Request failed');
+  if (!response.ok) throw new Error(data.error || 'Запрос не выполнен');
   return data as T;
 }
 
@@ -90,5 +90,5 @@ export const api = {
 };
 
 export function money(cents: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
+  return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD' }).format(cents / 100);
 }

@@ -7,6 +7,22 @@ import './styles.css';
 
 type View = 'shop' | 'profile' | 'admin';
 
+const statusLabels: Record<Order['status'], string> = {
+  New: 'Новый',
+  Confirmed: 'Подтвержден',
+  Shipped: 'Отправлен',
+  Delivered: 'Доставлен'
+};
+
+const sizeLabels: Record<string, string> = {
+  'One size': 'Один размер',
+  Pack: 'Набор'
+};
+
+function displaySize(size: string) {
+  return sizeLabels[size] ?? size;
+}
+
 function submitWith(handler: (form: FormData) => Promise<void>) {
   return (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,7 +73,7 @@ function App() {
       if (existing) return items.map((item) => item === existing ? { ...item, quantity: item.quantity + 1 } : item);
       return [...items, { productId: product.id, size, quantity: 1 }];
     });
-    setMessage(`${product.name} added to cart`);
+    setMessage(`${product.name} добавлен в корзину`);
   }
 
   async function onLogin(form: FormData) {
@@ -65,7 +81,7 @@ function App() {
     setUser(data.user);
     setToken(data.token);
     localStorage.setItem('gpt-shop-token', data.token);
-    setMessage(`Signed in as ${data.user.username}`);
+    setMessage(`Вы вошли как ${data.user.username}`);
   }
 
   async function onRegister(form: FormData) {
@@ -78,7 +94,7 @@ function App() {
     setUser(data.user);
     setToken(data.token);
     localStorage.setItem('gpt-shop-token', data.token);
-    setMessage('Account created');
+    setMessage('Аккаунт создан');
   }
 
   async function checkout(form: FormData) {
@@ -91,7 +107,7 @@ function App() {
     }, token || undefined);
     setCart([]);
     setOrders((current) => [data.order, ...current]);
-    setMessage(`Order #${data.order.id} placed`);
+    setMessage(`Заказ #${data.order.id} оформлен`);
     await refreshProducts();
   }
 
@@ -105,11 +121,11 @@ function App() {
   return (
     <main>
       <header className="topbar">
-        <button className="brand" onClick={() => setView('shop')}><ShoppingBag size={24} /> Vibe Miner Shop</button>
+        <button className="brand" onClick={() => setView('shop')}><ShoppingBag size={24} /> Магазин Vibe Miner</button>
         <nav>
-          <button onClick={() => setView('shop')}><Search size={18} /> Shop</button>
-          <button onClick={() => setView('profile')}><UserRound size={18} /> Profile</button>
-          {user?.role === 'admin' && <button onClick={() => setView('admin')}><Lock size={18} /> Admin</button>}
+          <button onClick={() => setView('shop')}><Search size={18} /> Магазин</button>
+          <button onClick={() => setView('profile')}><UserRound size={18} /> Профиль</button>
+          {user?.role === 'admin' && <button onClick={() => setView('admin')}><Lock size={18} /> Админ</button>}
           {user ? <button onClick={logout}><LogOut size={18} /> {user.username}</button> : null}
         </nav>
       </header>
@@ -120,16 +136,16 @@ function App() {
         <>
           <section className="hero">
             <div>
-              <p>Indie game merchandise</p>
-              <h1>Wear the save point. Frame the boss fight.</h1>
+              <p>Мерч по инди-играм</p>
+              <h1>Носи точку сохранения. Повесь битву с боссом.</h1>
             </div>
           </section>
           <section className="layout">
             <aside className="panel">
-              <h2><Filter size={18} /> Filters</h2>
-              <label>Category<select value={filters.category} onChange={(event) => setFilters({ ...filters, category: event.target.value })}><option value="">All</option>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
-              <label>Size<select value={filters.size} onChange={(event) => setFilters({ ...filters, size: event.target.value })}><option value="">All</option>{['S', 'M', 'L', 'XL', 'A2', 'A3', 'One size', 'Pack'].map((size) => <option key={size}>{size}</option>)}</select></label>
-              <label>Sort<select value={filters.sort} onChange={(event) => setFilters({ ...filters, sort: event.target.value })}><option value="">Featured</option><option value="price-asc">Price low</option><option value="price-desc">Price high</option><option value="name">Name</option></select></label>
+              <h2><Filter size={18} /> Фильтры</h2>
+              <label>Категория<select value={filters.category} onChange={(event) => setFilters({ ...filters, category: event.target.value })}><option value="">Все</option>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
+              <label>Размер<select value={filters.size} onChange={(event) => setFilters({ ...filters, size: event.target.value })}><option value="">Все</option>{['S', 'M', 'L', 'XL', 'A2', 'A3', 'One size', 'Pack'].map((size) => <option key={size} value={size}>{displaySize(size)}</option>)}</select></label>
+              <label>Сортировка<select value={filters.sort} onChange={(event) => setFilters({ ...filters, sort: event.target.value })}><option value="">Сначала избранное</option><option value="price-asc">Цена по возрастанию</option><option value="price-desc">Цена по убыванию</option><option value="name">По названию</option></select></label>
               <CartPanel products={products} cart={cart} setCart={setCart} total={total} setMessage={setMessage} checkout={checkout} />
             </aside>
             <section className="grid">
@@ -154,8 +170,8 @@ function ProductCard({ product, addToCart, open }: { product: Product; addToCart
       <h3>{product.name}</h3>
       <p>{product.description}</p>
       <strong>{money(product.priceCents)}</strong>
-      <small>{product.stock} in stock</small>
-      <button disabled={product.stock === 0} onClick={() => addToCart(product)}><Plus size={18} /> Add</button>
+      <small>В наличии: {product.stock}</small>
+      <button disabled={product.stock === 0} onClick={() => addToCart(product)}><Plus size={18} /> Добавить</button>
     </div>
   </article>;
 }
@@ -168,9 +184,9 @@ function ProductModal({ product, addToCart, close }: { product: Product; addToCa
       <div>
         <h2>{product.name}</h2>
         <p>{product.description}</p>
-        <label>Size<select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <p>{product.stock} available</p>
-        <button onClick={() => { addToCart(product, size); close(); }}><ShoppingBag size={18} /> Add {money(product.priceCents)}</button>
+        <label>Размер<select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item} value={item}>{displaySize(item)}</option>)}</select></label>
+        <p>Доступно: {product.stock}</p>
+        <button onClick={() => { addToCart(product, size); close(); }}><ShoppingBag size={18} /> Добавить за {money(product.priceCents)}</button>
       </div>
     </section>
   </div>;
@@ -185,26 +201,50 @@ function CartPanel({ products, cart, setCart, total, setMessage, checkout }: {
   checkout: (form: FormData) => Promise<void>;
 }) {
   const [importValue, setImportValue] = useState('');
+  const [exportValue, setExportValue] = useState('');
+
+  async function exportCart() {
+    const value = encodeCart(cart);
+    setExportValue(value);
+    try {
+      await navigator.clipboard?.writeText(value);
+      setMessage('Экспорт корзины готов и скопирован');
+    } catch {
+      setMessage('Экспорт корзины готов: скопируйте строку из поля');
+    }
+  }
+
+  function importCart() {
+    try {
+      setCart(decodeCart(importValue.trim()));
+      setImportValue('');
+      setMessage('Корзина импортирована');
+    } catch {
+      setMessage('Не удалось импортировать корзину: проверьте строку');
+    }
+  }
+
   return <section className="cart">
-    <h2><Package size={18} /> Cart</h2>
+    <h2><Package size={18} /> Корзина</h2>
     {cart.map((item) => {
       const product = products.find((entry) => entry.id === item.productId);
       return <div className="cartLine" key={`${item.productId}-${item.size}`}>
-        <span>{product?.name ?? item.productId} / {item.size}</span>
+        <span>{product?.name ?? item.productId} / {displaySize(item.size)}</span>
         <input type="number" min="1" value={item.quantity} onChange={(event) => setCart((items) => items.map((cartItem) => cartItem === item ? { ...cartItem, quantity: Number(event.target.value) } : cartItem))} />
-        <button aria-label="Remove" onClick={() => setCart((items) => items.filter((cartItem) => cartItem !== item))}><Trash2 size={16} /></button>
+        <button aria-label="Удалить" onClick={() => setCart((items) => items.filter((cartItem) => cartItem !== item))}><Trash2 size={16} /></button>
       </div>;
     })}
-    <strong>Total {money(total)}</strong>
-    <button onClick={() => { navigator.clipboard?.writeText(encodeCart(cart)); setMessage('Cart export copied'); }}><Download size={16} /> Export</button>
-    <textarea value={importValue} onChange={(event) => setImportValue(event.target.value)} placeholder="Paste cart export" />
-    <button onClick={() => { setCart(decodeCart(importValue)); setImportValue(''); }}><Upload size={16} /> Import</button>
+    <strong>Итого {money(total)}</strong>
+    <button type="button" onClick={exportCart}><Download size={16} /> Экспорт</button>
+    <textarea readOnly value={exportValue} placeholder="Здесь появится строка экспорта корзины" onFocus={(event) => event.currentTarget.select()} />
+    <textarea value={importValue} onChange={(event) => setImportValue(event.target.value)} placeholder="Вставьте строку экспорта корзины" />
+    <button type="button" onClick={importCart}><Upload size={16} /> Импорт</button>
     <form onSubmit={submitWith((form) => checkout(form).catch((error) => setMessage(error.message)))}>
-      <input name="customerName" placeholder="Name" required />
-      <input name="address" placeholder="Address" required />
-      <input name="phone" placeholder="Phone" required />
-      <select name="paymentMethod"><option>Mock card</option><option>Mock cash on delivery</option></select>
-      <button disabled={!cart.length}><ShoppingBag size={18} /> Checkout</button>
+      <input name="customerName" placeholder="Имя" required />
+      <input name="address" placeholder="Адрес" required />
+      <input name="phone" placeholder="Телефон" required />
+      <select name="paymentMethod"><option>Тестовая карта</option><option>Тестовая оплата при получении</option></select>
+      <button disabled={!cart.length}><ShoppingBag size={18} /> Оформить заказ</button>
     </form>
   </section>;
 }
@@ -220,33 +260,33 @@ function Profile({ user, orders, onLogin, onRegister, token, setMessage }: {
   const [resetToken, setResetToken] = useState('');
   if (user) return <section className="account">
     <h1>{user.name}</h1>
-    <p>{user.email} · {user.role}</p>
-    <h2>Order history</h2>
-    {orders.map((order) => <article className="order" key={order.id}><strong>#{order.id} {order.status}</strong><span>{money(order.totalCents)}</span><p>{order.items.map((item) => item.productName ?? item.productId).join(', ')}</p></article>)}
-    {!orders.length && <p>No orders yet.</p>}
+    <p>{user.email} · {user.role === 'admin' ? 'администратор' : 'покупатель'}</p>
+    <h2>История заказов</h2>
+    {orders.map((order) => <article className="order" key={order.id}><strong>#{order.id} {statusLabels[order.status]}</strong><span>{money(order.totalCents)}</span><p>{order.items.map((item) => item.productName ?? item.productId).join(', ')}</p></article>)}
+    {!orders.length && <p>Заказов пока нет.</p>}
   </section>;
   return <section className="authGrid">
     <form className="panel" onSubmit={submitWith((form) => onLogin(form).catch((error) => setMessage(error.message)))}>
-      <h2>Login</h2>
-      <input name="login" placeholder="Email or username" defaultValue="admin" />
-      <input name="password" type="password" placeholder="Password" defaultValue={token ? '' : 'admin'} />
-      <button><Lock size={18} /> Sign in</button>
+      <h2>Вход</h2>
+      <input name="login" placeholder="Email или логин" defaultValue="admin" />
+      <input name="password" type="password" placeholder="Пароль" defaultValue={token ? '' : 'admin'} />
+      <button><Lock size={18} /> Войти</button>
     </form>
     <form className="panel" onSubmit={submitWith((form) => onRegister(form).catch((error) => setMessage(error.message)))}>
-      <h2>Register</h2>
-      <input name="name" placeholder="Name" />
-      <input name="username" placeholder="Username" />
+      <h2>Регистрация</h2>
+      <input name="name" placeholder="Имя" />
+      <input name="username" placeholder="Логин" />
       <input name="email" placeholder="Email" />
-      <input name="password" type="password" placeholder="Password" />
-      <button><UserRound size={18} /> Create account</button>
+      <input name="password" type="password" placeholder="Пароль" />
+      <button><UserRound size={18} /> Создать аккаунт</button>
     </form>
-    <form className="panel" onSubmit={submitWith(async (form) => { const data = await api.forgot(String(form.get('email'))); setResetToken(data.token ?? ''); setMessage(data.token ? `Recovery token: ${data.token}` : 'If that user exists, a token was generated'); })}>
-      <h2>Password recovery</h2>
+    <form className="panel" onSubmit={submitWith(async (form) => { const data = await api.forgot(String(form.get('email'))); setResetToken(data.token ?? ''); setMessage(data.token ? `Токен восстановления: ${data.token}` : 'Если пользователь существует, токен создан'); })}>
+      <h2>Восстановление пароля</h2>
       <input name="email" placeholder="Email" />
-      <button>Request token</button>
-      <input value={resetToken} onChange={(event) => setResetToken(event.target.value)} placeholder="Recovery token" />
-      <input name="newPassword" type="password" placeholder="New password" />
-      <button type="button" onClick={async () => { await api.reset(resetToken, (document.querySelector('[name=newPassword]') as HTMLInputElement).value); setMessage('Password updated'); }}>Reset password</button>
+      <button>Запросить токен</button>
+      <input value={resetToken} onChange={(event) => setResetToken(event.target.value)} placeholder="Токен восстановления" />
+      <input name="newPassword" type="password" placeholder="Новый пароль" />
+      <button type="button" onClick={async () => { await api.reset(resetToken, (document.querySelector('[name=newPassword]') as HTMLInputElement).value); setMessage('Пароль обновлен'); }}>Сбросить пароль</button>
     </form>
   </section>;
 }
@@ -267,35 +307,35 @@ function Admin({ token, products, refreshProducts, setMessage }: { token: string
       featured: Boolean(form.get('featured'))
     }, token);
     await refreshProducts();
-    setMessage('Product saved');
+    setMessage('Товар сохранен');
   }
   return <section className="admin">
     <form className="panel" onSubmit={submitWith((form) => saveProduct(form).catch((error) => setMessage(error.message)))}>
-      <h2>New product</h2>
-      <input name="name" placeholder="Name" required />
-      <input name="category" placeholder="Category" required />
-      <input name="priceCents" type="number" placeholder="Price cents" required />
-      <input name="stock" type="number" placeholder="Stock" required />
-      <input name="sizes" placeholder="Sizes, comma separated" defaultValue="S,M,L" />
-      <input name="imageUrl" placeholder="Local image URL" />
-      <input name="externalImageUrl" placeholder="External image URL" />
-      <textarea name="description" placeholder="Description" required />
-      <label className="check"><input name="featured" type="checkbox" /> Featured</label>
-      <button><Plus size={18} /> Add product</button>
+      <h2>Новый товар</h2>
+      <input name="name" placeholder="Название" required />
+      <input name="category" placeholder="Категория" required />
+      <input name="priceCents" type="number" placeholder="Цена в центах" required />
+      <input name="stock" type="number" placeholder="Остаток" required />
+      <input name="sizes" placeholder="Размеры через запятую" defaultValue="S,M,L" />
+      <input name="imageUrl" placeholder="Локальный URL изображения" />
+      <input name="externalImageUrl" placeholder="Внешний URL изображения" />
+      <textarea name="description" placeholder="Описание" required />
+      <label className="check"><input name="featured" type="checkbox" /> Избранное</label>
+      <button><Plus size={18} /> Добавить товар</button>
     </form>
     <section className="adminList">
-      <h2>Products</h2>
+      <h2>Товары</h2>
       {products.map((product) => <div className="adminRow" key={product.id}>
         <span>{product.name}</span><strong>{money(product.priceCents)}</strong>
-        <button onClick={async () => { await api.deleteProduct(product.id, token); await refreshProducts(); }}><Trash2 size={16} /></button>
+        <button aria-label="Удалить товар" onClick={async () => { await api.deleteProduct(product.id, token); await refreshProducts(); }}><Trash2 size={16} /></button>
       </div>)}
-      <h2>Orders</h2>
+      <h2>Заказы</h2>
       {orders.map((order) => <div className="adminRow" key={order.id}>
         <span>#{order.id} {order.customerName}</span><strong>{money(order.totalCents)}</strong>
         <select value={order.status} onChange={async (event) => {
           const data = await api.updateOrder(order.id, event.target.value as Order['status'], token);
           setOrders((current) => current.map((entry) => entry.id === order.id ? data.order : entry));
-        }}>{['New', 'Confirmed', 'Shipped', 'Delivered'].map((status) => <option key={status}>{status}</option>)}</select>
+        }}>{(['New', 'Confirmed', 'Shipped', 'Delivered'] as Order['status'][]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select>
       </div>)}
     </section>
   </section>;

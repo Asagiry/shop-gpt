@@ -14,4 +14,11 @@ describe('cart import/export', () => {
   it('rejects invalid cart payloads', () => {
     expect(() => decodeCart('not-base64')).toThrow(/Invalid cart/i);
   });
+
+  it('returns a visible export string without relying on clipboard support', () => {
+    const items = [{ productId: 3, size: 'L', quantity: 1 }];
+
+    expect(encodeCart(items)).toBeTypeOf('string');
+    expect(encodeCart(items).length).toBeGreaterThan(10);
+  });
 });
